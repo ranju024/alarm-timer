@@ -43,10 +43,32 @@ while running:
                 # only check if previously any of the buttons haven't been pressed!!
                 if btn == None:
                     btn = buttons.get_mouse_click(pos[0], pos[1])
+                elif btn == 0:
+                    buttons.alarm_button_clicked(pos[0], pos[1])
     if btn != None:
         if btn == 0: # alarm window
             pygame.display.set_caption('My-Alarm-Window')
             surface.fill(alarm_window_color)
+
+            # if alarm hasn't been set, draw buttons with them in active state
+            if buttons.is_alarm_set == False:
+                buttons.get_alarm_click(pygame, surface)
+                ...
+            # if alarm has been set, display timer or maybe the day and time for which it has been set
+            else:
+                msg = "Your alarm has been set on"
+                time = str(buttons.selected_time[0])+" : "+ str(buttons.selected_time[1])+" "+str(buttons.selected_time[2]).upper()
+                msg_surface1 = font1.render(msg, True, (0,10,0))
+                msg_surface2 = font2.render(time, True, (0,10,0))
+
+    # screen.fill(color, button_rect) 
+                rect_pos = (250,300)
+                button_rect = pygame.Rect(rect_pos[0], rect_pos[1], 110, 50) 
+                surface.fill((255,255,255), button_rect)
+
+                surface.blit(msg_surface1, (50, 240))
+                surface.blit(msg_surface2, (rect_pos[0]+10, 310))
+            # buttons.draw_alarm_buttons( pygame, surface)
         elif btn == 1:
             pygame.display.set_caption('My-Timer-Window')
             surface.fill(timer_window_color)
