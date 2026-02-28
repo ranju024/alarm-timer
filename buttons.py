@@ -16,7 +16,7 @@ class Buttons:
         self.text_color_normal = (0, 0, 0)
         self.text_color_selected = (0, 244, 20)
 
-        self.is_alarm_set = True
+        self.is_alarm_set = False
         self.is_timer_set = False
 
         self.btn_w = 120
@@ -36,8 +36,11 @@ class Buttons:
         self.selected_time = [0, 0, 'am']
         self.alarm_btns_state = [False, False, False, False]
 
-        self.text = ''
+        self.text = ""
 
+    def get_alarm_time(self):
+        alarm_time_str = f"{self.selected_time[0]:02}:{self.selected_time[1]:02} {self.selected_time[2].upper()}"
+        return alarm_time_str
 
     def reset(self):
         self.is_alarm_set = False
@@ -144,23 +147,36 @@ class Buttons:
     #     # if btn == 2: ask user to input am/pm
     #     # if btn == 3: activate the alarm (current time, final time, ...)
 
-    def handle_event(self, pygame, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.active = self.rect.collidepoint(event.pos)
-            self.color = pygame.Color('dodgerblue2') if self.active else pygame.Color('lightskyblue3')
-        if event.type == pygame.KEYDOWN and self.active:
-            if event.key == pygame.K_RETURN:
-                return int(self.text) if self.text.isdigit() else None
-            elif event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            elif event.unicode.isdigit() and len(self.text) < self.max_length:
-                self.text += event.unicode
-            self.txt_surface = self.font.render(self.text, True, self.color)
-        return None
+    def finalize_time_input(self, index):
+        """Finalizes the hour or minute input when Enter is pressed."""
+        try:
+            value = int(self.text)
+            if index == 0:  # Hour
+                if 1 <= value <= 12:
+                    self.selected_time[index] = value
+            elif index == 1:  # Minutes
+                if 0 <= value < 60:
+                    self.selected_time[index] = value
+        except ValueError:
+            # Handle cases where input is not a valid number
+            print(f"{self.selected_time[index]} is not a valid number")
+            self.selected_time[index] = 0
+        self.text = "" # Clear input box text after submission
 
-    def draw(self, pygame, screen):
-        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
-        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+    def handle_time_input(self, surface, event, pygame, index):
+        pos = self.alarm_btn_positions[index]
+        """Handles digit input, backspace, and rendering for text fields."""
+        if event.key == pygame.K_BACKSPACE:
+            self.text = self.text[:-1]
+        elif event.unicode.isdigit() and len(self.text) < 2:
+            self.text += event.unicode
+        
+        # Update the text surface immediately after changing the text
+        txt_surface = self.btn_font.render(str(self.text), True, (255,255,255))
+        # Now blit the text
+        surface.blit(txt_surface, pos)
+        pygame.display.update()
 
     def get_alarm_click(self, pygame, screen):
         for index, pos in enumerate(self.alarm_btn_positions):
@@ -177,31 +193,34 @@ class Buttons:
             # Clear the area with a background color
             screen.fill(color, button_rect) 
 
-# now handle user inputs (hour, min, toggle am-pm) when user presses the button
-        # self.selected_time = ['00', '00', 'am']
+        # now handle user inputs (hour, min, toggle am-pm) when user presses the button
+        # self.selected_time = [0, 0, 'am']
         # self.alarm_btns_state = [False, False, False, False]
-            if self.alarm_btns_state[index] == True:
-                if index == 0 or index == 1:
-                    for event in pygame.event.get():
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_RETURN:
-                                if index == 0:  # for hour
-                                    # self.selected_time[index] = self.text if self.text <=12  else 0
-                                    self.selected_time[index] = int(self.text) if self.text.isdigit() and int(self.text) <=12  else 0
-                                elif index == 1:  # for minutes
-                                    self.selected_time[index] = int(self.text) if self.text.isdigit() and int(self.text) < 60  else 0
-                                    # self.selected_time[index] = self.text if self.text <60  else 0
-                            elif event.key == pygame.K_BACKSPACE:
-                                self.text = self.text[:-1]
-                            elif event.unicode.isdigit() and len(self.text) < 2:
-                                self.text += event.unicode
-                            txt_surface = self.btn_font.render(str(self.text), True, text_color)
-                            # Now blit the text
-                            screen.blit(txt_surface, pos)
-                    # pygame.draw.rect(screen, self.color, self.rect, 2)
-                elif index == 2:  # for am/pm
-                    self.toggle_ampm()
-
+            # if self.alarm_btns_state[index] == True:
+            #     if index == 0 or index == 1:
+            #         for event in pygame.event.get():
+            #             if event.type == pygame.KEYDOWN:
+            #                 if event.key == pygame.K_RETURN:  # if user presses 'Enter'
+            #                     if index == 0:  # for hour
+            #                         # self.selected_time[index] = self.text if self.text <=12  else 0
+            #                         self.selected_time[index] = int(self.text) if self.text.isdigit() and int(self.text) <=12  else 0
+            #                     elif index == 1:  # for minutes
+            #                         self.selected_time[index] = int(self.text) if self.text.isdigit() and int(self.text) < 60  else 0
+            #                         # self.selected_time[index] = self.text if self.text <60  else 0
+            #                 elif event.key == pygame.K_BACKSPACE:
+            #                     self.text = self.text[:-1]
+            #                 elif event.unicode.isdigit() and len(self.text) < 2:
+            #                     self.text += event.unicode
+            #                 txt_surface = self.btn_font.render(str(self.text), True, text_color)
+            #                 # Now blit the text
+            #                 screen.blit(txt_surface, pos)
+            #         # pygame.draw.rect(screen, self.color, self.rect, 2)
+            #     elif index == 2:  # for am/pm
+            #         self.toggle_ampm()
+            #         txt_surface = self.btn_font.render(self.selected_time[2].upper(), True, text_color)
+            #         screen.blit(txt_surface, pos)
+            
+            # if user presses on 'Activate' button, show the activated window
             if index == 3:
                 prompt = 'Activate'
             else:
@@ -211,27 +230,29 @@ class Buttons:
 
     # Toggle am or pm
     def toggle_ampm(self):
-        if self.alarm_btns_state[2] == 'am':
-            self.alarm_btns_state[2] = 'pm'
+        if self.selected_time[2] == 'am':
+            self.selected_time[2] = 'pm'
         else:
-            self.alarm_btns_state[2] = 'am'
+            self.selected_time[2] = 'am'
 
 
-    # return True when button pressed
+    # return index when button pressed
     def button_clicked(self, mouse_x, mouse_y):
         for index, pos in enumerate(self.btn_positions):
             if self.on_button(mouse_x, mouse_y, pos):
                 return index
         return None
 
-        # set btn state when any button pressed
+        # set btn state tp True when any button pressed
     def alarm_button_clicked(self, mouse_x, mouse_y):
         for index, pos in enumerate(self.alarm_btn_positions):
             if self.on_button(mouse_x, mouse_y, pos):
                 self.alarm_btns_state[index] = True
+                if index == 3:
+                    self.is_alarm_set = True
+                return index
             elif index != 3:
                 self.alarm_btns_state[index] = False
-        return None
 
     # is button currently being hovered?
     def button_hover(self, pos):
